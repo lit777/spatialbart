@@ -1,7 +1,16 @@
-# Function of CHANGE alteration  
-CHANGE <- function(sigma2, sigma_mu, i.nodes, rules,  R,  prop.prob){
-
-  xpred <- Xpred; xcut <- Xcut
+# Fun. of CHANGE alteration  
+CHANGE <- function(sigma2, sigma_mu, i.nodes, rules,  R,  prop.prob, ind=NULL){
+  
+  if(ind==1){
+      xpred <- Xpred[-mis.ind,]
+      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+  }else{
+    if(ind==0){
+      xpred <- Xpred0; xcut <- Xcut0
+    }else{
+      xpred <- Xpred; xcut <- Xcut
+    }
+  }
   
   t.node <- c(0, 0)
   for(i in 2:length(i.nodes)){
