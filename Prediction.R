@@ -3,7 +3,7 @@ function_mean_pred <- function(p.t.node, p.tnode, p.i.nodes, rules, ind_sub=NULL
   if(ind_sub==1){
     xcut <- Xcut1; 
   }else{
-    xcut <- Xcut; 
+      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(Xpred[-mis.ind,t]))) # e.g. unique values of predictors
   }
   
   loc.pick <- p.t.node[p.tnode,] # whcih terminal node?
@@ -69,7 +69,8 @@ Mean.Parameter_pred <- function(sigma2, sigma_mu, i.nodes, rules,  mu, ind=NULL,
   if(ind==1){
    xcut <- Xcut1; 
   }else{
-   xcut <- Xcut; n <- length(R)
+      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(Xpred[-mis.ind,t]))) # e.g. unique values of predictors;
+      n <- n.full
   }
   
   t.node <- c(0, 0)

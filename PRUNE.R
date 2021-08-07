@@ -1,7 +1,17 @@
-# Function of PRUNE alteration
-PRUNE <-  function(sigma2, sigma_mu, i.nodes, rules,  R, prop.prob){
-
-    xpred <- Xpred; xcut <- Xcut
+# Fun. of PRUNE alteration
+PRUNE <-  function(sigma2, sigma_mu, i.nodes, rules,  R, prop.prob, ind=NULL){
+    
+    if(ind==1){
+        xpred <- Xpred[-mis.ind,]
+        xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+  }else{
+    if(ind==0){
+      xpred <- Xpred0; xcut <- Xcut0
+    }else{
+      xpred <- Xpred; xcut <- Xcut
+    }
+  }
+  
   
     t.node <- c(0, 0)
     for(i in 2:length(i.nodes)){
@@ -48,7 +58,6 @@ PRUNE <-  function(sigma2, sigma_mu, i.nodes, rules,  R, prop.prob){
         temp.L <- temp.t[,dim(temp.t)[2]]
         temp.R <- setdiff(temp[,dim(temp)[2]], temp.L)
         unique.len <- length(unique(temp[,prop.pred]))
-    #    prop.rule <- list(out=c(new.rule,xcut[[prop.pred]][new.rule],length(xcut[[prop.pred]])-1),R.R=temp.R, R.L=temp.L)
       }else{
           #        prop.t.node <- prop.t.node[-1,]
         prop.pred <- i.nodes[[t.node[singly.inode,1]-1]][t.node[singly.inode,2]/2] # predictor of the singly internal node
@@ -128,13 +137,9 @@ PRUNE <-  function(sigma2, sigma_mu, i.nodes, rules,  R, prop.prob){
     STR <- -log(alpha) - 2*log((1- alpha / (2 + d)^beta )) + log((1 + d)^beta - alpha) - log(max(prop.prob, 0)) + log(unique.len)
   
     r <- TRANS+LH+STR
-#    Prop.prob <- rep(NA, P)
-#    Prop.prob <- prop.prob_star
     if(r > log(runif(1))){
         i.nodes <- prop.i.nodes;
         rules <- prop.rules;
-#        Prop.prob <- prop.prob_star
-#        print("Pruned")
     }
     
     t.node <- c(0, 0)
