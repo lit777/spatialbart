@@ -1,8 +1,19 @@
 function_mean <- function(p.t.node, p.tnode, p.i.nodes, rules, ind_sub=NULL){
-
-  xpred <- Xpred; xcut <- Xcut
-
-  loc.pick <- p.t.node[p.tnode,] # whcih terminal node?
+  
+  if(ind_sub==1){
+      xpred <- Xpred[-mis.ind,]
+      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+    nn <- n.complete
+  }else{
+    if(ind_sub==0){
+      xpred <- Xpred0; xcut <- Xcut0
+    }else{
+      xpred <- Xpred; xcut <- Xcut
+    }
+  }
+  
+  
+  loc.pick <- p.t.node[p.tnode,] # which terminal node?
   
   h.lv <- NULL   # location in a given hierarchical level
   h.lv[1] <- loc.pick[2] 
@@ -52,14 +63,25 @@ function_mean <- function(p.t.node, p.tnode, p.i.nodes, rules, ind_sub=NULL){
       }
     }
   }
+  
   return(list(R=R))
 }
 
 # Sample mean parameters
-Mean.Parameter <- function(sigma2, sigma_mu, i.nodes, rules,  R){
+Mean.Parameter <- function(sigma2, sigma_mu, i.nodes, rules,  R, ind=NULL){
   
-  xpred <- Xpred; xcut <- Xcut; nn <- length(R)
-
+  if(ind==1){
+    xpred <- Xpred[-mis.ind,]
+    xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+    nn <- n.complete
+  }else{
+    if(ind==0){
+      xpred <- Xpred0; xcut <- Xcut0; nn <- n0
+    }else{
+      xpred <- Xpred; xcut <- Xcut; nn <- length(R)
+    }
+  }
+  
   t.node <- c(0, 0)
   for(i in 2:length(i.nodes)){
     temp <- grep(999, i.nodes[[i]])
@@ -96,5 +118,6 @@ Mean.Parameter <- function(sigma2, sigma_mu, i.nodes, rules,  R){
     T[temp.ind] <- mu[i]
   }
   }
+  
   return(list(T=T, mu=mu))
 }
