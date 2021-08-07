@@ -132,6 +132,48 @@ NumericVector gaussiancarupdate(NumericMatrix Wtriplet, NumericMatrix Wbegfin,
   }
   
   
+// [[Rcpp::export]]
+NumericVector gaussiancarupdate0(NumericMatrix Wtriplet, NumericMatrix Wbegfin,
+                        NumericVector Wtripletsum, const int nsites, NumericVector phi, double tau2,
+                        double rho, double nu2, NumericVector offset)
+{
+  // Update the spatially correlated random effects
+  //Create new objects
+  int rowstart=0, rowend=0;
+  double sumphi;
+  double fcprecision, fcsd, fcmean;
+  double priorvardenom, priormean, priorvar;
+  NumericVector phinew(nsites);
+  
+
+  
+  //  Update each random effect in turn
+  phinew = phi;
+  
+  for(int j = 0; j < nsites; j++)
+  {
+    // Calculate prior variance
+    priorvardenom = rho * (Wtripletsum[j]) + 1 - rho;
+    priorvar = tau2 / priorvardenom;
+    
+    // Calculate the prior mean
+    rowstart = Wbegfin(j,0) - 1;
+    rowend = Wbegfin(j,1);
+    sumphi = 0;
+    for(int l = rowstart; l < rowend; l++) sumphi += Wtriplet(l, 2) * phinew[(Wtriplet(l,1) - 1)];
+    priormean = rho * sumphi / priorvardenom;
+    
+
+      // propose a value
+      fcprecision = (1/nu2) + (1/priorvar);
+      fcsd = pow((1/fcprecision),0.5);
+      fcmean = (priormean / priorvar + offset[j]/nu2) / fcprecision;
+      phinew[j] = rnorm(1, fcmean, fcsd)[0];
+  }
+    
+    return phinew;
+}
+
 
 
   // [[Rcpp::export]]
