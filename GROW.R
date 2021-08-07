@@ -1,7 +1,16 @@
-# Function of first grow
-GROW.first <- function(sigma2, sigma_mu,i.nodes, rules,  R,  prop.prob){
-
-        xpred <- Xpred; xcut <- Xcut
+# Fun. of first grow
+GROW.first <- function(sigma2, sigma_mu,i.nodes, rules,  R,  prop.prob, ind=NULL){
+    
+  if(ind==1){
+      xpred <- Xpred[-mis.ind,]
+      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+  }else{
+    if(ind==0){
+    xpred <- Xpred0; xcut <- Xcut0
+    }else{
+      xpred <- Xpred; xcut <- Xcut
+    }
+  }
   
         prop.pred <- sample(1:P, 1, replace=FALSE,  prob = prop.prob) # pick a predictor
         prop.rule <- sample(2:length(xcut[[prop.pred]]), 1)
@@ -39,14 +48,24 @@ GROW.first <- function(sigma2, sigma_mu,i.nodes, rules,  R,  prop.prob){
             rules <- prop.rules;
             rules[[length(rules)+1]] <- rep(NA, 2^(length(rules)))
         }
+    
         return(list(i.nodes=i.nodes, rules=rules))
 }
 
 
-# Function of grow alteration
-GROW <- function(sigma2, sigma_mu, i.nodes, rules,  R,  prop.prob){
+# Fun. of grow alteration
+GROW <- function(sigma2, sigma_mu, i.nodes, rules,  R,  prop.prob, ind=NULL){
 
-    xpred <- Xpred; xcut <- Xcut
+    if(ind==1){
+        xpred <- Xpred[-mis.ind,]
+        xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(xpred[,t]))) # e.g. unique values of predictors
+  }else{
+    if(ind==0){
+      xpred <- Xpred0; xcut <- Xcut0
+    }else{
+      xpred <- Xpred; xcut <- Xcut
+    }
+  }
   
     t.node <- c(0, 0)
     for(i in 2:length(i.nodes)){
