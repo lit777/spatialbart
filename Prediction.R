@@ -1,103 +1,126 @@
-function_mean_pred <- function(p.t.node, p.tnode, p.i.nodes, rules, ind_sub=NULL, xpred){
+
+
+# Sample mean parameters
+Mean.Parameter_pred <- function(dt, ind=NULL){
   
-  if(ind_sub==1){
-    xcut <- Xcut1; 
+  if(ind==1){
+   xcut <- Xcut;
   }else{
-      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(Xpred[-mis.ind,t]))) # e.g. unique values of predictors
+   xcut <- Xcut;
   }
   
-  loc.pick <- p.t.node[p.tnode,] # whcih terminal node?
+  Terminal <- which(dt$Terminal==1)
+  Terminal.len <- length(Terminal)
   
-  h.lv <- NULL   # location in a given hierarchical level
-  h.lv[1] <- loc.pick[2] 
-  lv <- NULL # a hierarchical level
-  lv[1] <- loc.pick[1]
-  ii <- 1
-  while(lv[ii]!=1){
-    ii <- ii+1
-    if(h.lv[ii-1] %% 2 ==0){
-      h.lv[ii] <- h.lv[ii-1]/2
-      lv[ii] <- loc.pick[1]-ii+1
-    }else{
-      h.lv[ii] <- (h.lv[ii-1]+1)/2 
-      lv[ii] <- loc.pick[1]-ii+1
-    }
-  }
-  h.lv <- rev(h.lv)
-  lv <- rev(lv)
-  
-  temp <- cbind(xpred, 1:dim(xpred)[1])
-  if(h.lv[2] %% 2 ==0 ){
-    temp.t <- subset(temp, temp[,p.i.nodes[[1]]] >= xcut[[p.i.nodes[[1]]]][rules[[1]]])
-    temp.R <- temp.t[,dim(temp.t)[2]]
-    temp.L <- setdiff(1:dim(temp)[1],temp.R)
-    R <- temp.R
-  } else {
-    temp.t <- subset(temp, temp[,p.i.nodes[[1]]] < xcut[[p.i.nodes[[1]]]][rules[[1]]])
-    temp.L <- temp.t[,dim(temp.t)[2]]
-    temp.R <- setdiff(1:dim(temp)[1],temp.L)
-    R <- temp.L
-  }
-  
-  if(length(h.lv) > 2){
-    for(i in 3:length(h.lv)){
-      if(h.lv[i] %% 2 ==0){
-        temp <- temp.t
-        temp.t <- subset(temp, temp[,p.i.nodes[[lv[i-1]]][h.lv[i-1]]] >= xcut[[p.i.nodes[[lv[i-1]]][h.lv[i-1]]]][rules[[lv[i-1]]][h.lv[i-1]]])  
-        temp.R <- temp.t[,dim(temp.t)[2]]
-        temp.L <- setdiff(temp[,dim(temp)[2]], temp.R)
-        R <- temp.R
-      } else {
-        temp <- temp.t
-        temp.t <- subset(temp, temp[,p.i.nodes[[lv[i-1]]][h.lv[i-1]]] < xcut[[p.i.nodes[[lv[i-1]]][h.lv[i-1]]]][rules[[lv[i-1]]][h.lv[i-1]]])  
-        temp.L <- temp.t[,dim(temp.t)[2]]
-        temp.R <- setdiff(temp[,dim(temp)[2]], temp.L)
-        R <- temp.L
+  if(Terminal.len>1){
+  Split.hist <- list()
+  Value.hist <- list()
+  Side.hist <- list()
+  for(i in 1:Terminal.len){
+      parent.node <- dt$parent[Terminal[i]]
+      current.node <- dt$position[Terminal[i]]
+      Split.hist[[i]] <- dt$Split[dt$position==parent.node]
+      Value.hist[[i]] <- dt$Value[dt$position==parent.node]
+      Side.hist[[i]] <- (current.node)%%2
+      while(parent.node != 1){
+          current.node <- dt$position[dt$position==parent.node]
+          parent.node <- dt$parent[dt$position==parent.node] 
+          Split.hist[[i]] <- c(Split.hist[[i]], dt$Split[dt$position==parent.node])
+          Value.hist[[i]] <- c(Value.hist[[i]], dt$Value[dt$position==parent.node]) 
+          Side.hist[[i]] <- c(Side.hist[[i]], (current.node)%%2)
       }
-    }
+      Split.hist[[i]] <- rev(Split.hist[[i]])
+      Value.hist[[i]] <- rev(Value.hist[[i]])
+      Side.hist[[i]] <- rev(Side.hist[[i]])
   }
   
-  return(list(R=R))
+#  xpred.temp <- xpred.origin <- cbind(xpred, seq(1, 2*n, 1))
+  ind.list <- list()
+  T <- rep(0, n)
+  xpred.temp <- xpred.mult
+  for(i in 1:Terminal.len){
+      count = 0
+      while(count < length(Split.hist[[i]])){
+          count <- count + 1
+          if(Side.hist[[i]][count] == 0){
+              sub.ind <- which(xpred.temp[[Split.hist[[i]][count]]] < xcut[[Split.hist[[i]][count]]][Value.hist[[i]][count]])
+              xpred.temp <- lapply(xpred.temp, function(x) x[sub.ind])
+          }else{
+            sub.ind <- which(xpred.temp[[Split.hist[[i]][count]]] >= xcut[[Split.hist[[i]][count]]][Value.hist[[i]][count]])
+            xpred.temp <- lapply(xpred.temp, function(x) x[sub.ind])
+            }
+      }
+      ind.list[[i]] <- xpred.temp[[(P+1)]]
+      xpred.temp <- lapply(xpred.mult, function(x) x[-ind.list[[i]]])
+      T[ind.list[[i]]] <- dt$MU[Terminal[i]]
+  }
+  }else{
+    T <- rep(dt$MU, n)
+  }
+  
+  return(list(T=T))
 }
 
 
 
 
+
 # Sample mean parameters
-Mean.Parameter_pred <- function(sigma2, sigma_mu, i.nodes, rules,  mu, ind=NULL, xpred){
+Mean.Parameter_pred_fit <- function(dt, ind=NULL){
   
   if(ind==1){
-   xcut <- Xcut1; 
+    xcut <- Xcut1;
   }else{
-      xcut <- lapply(1:dim(xpred)[2], function(t) sort(unique(Xpred[-mis.ind,t]))) # e.g. unique values of predictors;
-      n <- n.full
+    xcut <- Xcut0;
   }
   
-  t.node <- c(0, 0)
-  for(i in 2:length(i.nodes)){
-    temp <- grep(999, i.nodes[[i]])
-    if(length(temp) > 0){
-      t.node <- rbind(t.node, cbind(i, temp))
+  Terminal <- which(dt$Terminal==1)
+  Terminal.len <- length(Terminal)
+  
+  if(Terminal.len>1){
+    Split.hist <- list()
+    Value.hist <- list()
+    Side.hist <- list()
+    for(i in 1:Terminal.len){
+      parent.node <- dt$parent[Terminal[i]]
+      current.node <- dt$position[Terminal[i]]
+      Split.hist[[i]] <- dt$Split[dt$position==parent.node]
+      Value.hist[[i]] <- dt$Value[dt$position==parent.node]
+      Side.hist[[i]] <- (current.node)%%2
+      while(parent.node != 1){
+        current.node <- dt$position[dt$position==parent.node]
+        parent.node <- dt$parent[dt$position==parent.node] 
+        Split.hist[[i]] <- c(Split.hist[[i]], dt$Split[dt$position==parent.node])
+        Value.hist[[i]] <- c(Value.hist[[i]], dt$Value[dt$position==parent.node]) 
+        Side.hist[[i]] <- c(Side.hist[[i]], (current.node)%%2)
+      }
+      Split.hist[[i]] <- rev(Split.hist[[i]])
+      Value.hist[[i]] <- rev(Value.hist[[i]])
+      Side.hist[[i]] <- rev(Side.hist[[i]])
     }
-  }
-  
-  if(length(t.node)==2){
-    T <- rep(mu, n)
     
-  }else{
-    
-    t.node <- t.node[-1,]
-    
-    Resid <- list()  
-    for(i in 1:dim(t.node)[1]){
-      Resid[[i]] <- function_mean_pred(t.node, i, i.nodes, rules, ind_sub=ind, xpred)$R 
-    }  
-    
+    #  xpred.temp <- xpred.origin <- cbind(xpred, seq(1, 2*n, 1))
+    ind.list <- list()
     T <- rep(0, n)
-    for(i in 1:length(Resid)){
-      temp.ind <- Resid[[i]]
-      T[temp.ind] <- mu[i]
+    xpred.temp <- xpred.mult
+    for(i in 1:Terminal.len){
+      count = 0
+      while(count < length(Split.hist[[i]])){
+        count <- count + 1
+        if(Side.hist[[i]][count] == 0){
+          sub.ind <- which(xpred.temp[[Split.hist[[i]][count]]] < xcut[[Split.hist[[i]][count]]][Value.hist[[i]][count]])
+          xpred.temp <- lapply(xpred.temp, function(x) x[sub.ind])
+        }else{
+          sub.ind <- which(xpred.temp[[Split.hist[[i]][count]]] >= xcut[[Split.hist[[i]][count]]][Value.hist[[i]][count]])
+          xpred.temp <- lapply(xpred.temp, function(x) x[sub.ind])
+        }
+      }
+      ind.list[[i]] <- xpred.temp[[(P+1)]]
+      xpred.temp <- lapply(xpred.mult, function(x) x[-ind.list[[i]]])
+      T[ind.list[[i]]] <- dt$MU[Terminal[i]]
     }
+  }else{
+    T <- rep(dt$MU, n)
   }
   
   return(list(T=T))
